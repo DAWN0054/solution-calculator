@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>溶液配制计算器</title>
+<style>
+  :root {
+    --bg: #f2f5f9;
+    --card: #ffffff;
+    --ink: #1f2937;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+    --accent: #2563eb;
+    --accent-dark: #1d4ed8;
+    --danger: #b91c1c;
+    --ok: #047857;
+    --info: #92400e;
+    --ok-bg: #ecfdf5;
+    --danger-bg: #fef2f2;
+    --info-bg: #fffbeb;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  .card {
+    width: 100%;
+    max-width: 520px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 28px 28px 24px;
+    box-shadow: 0 10px 30px rgba(31, 41, 55, 0.08);
+  }
+  h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+  }
+  .subtitle {
+    margin: 6px 0 20px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .formula {
+    margin: 0 0 20px;
+    padding: 10px 14px;
+    background: #f8fafc;
+    border: 1px dashed var(--line);
+    border-radius: 10px;
+    font-size: 13px;
+    color: #334155;
+    line-height: 1.6;
+  }
+  .formula b { color: var(--accent-dark); }
+  .field {
+    margin-bottom: 14px;
+  }
+  .field > label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #374151;
+  }
+  .row {
+    display: flex;
+    gap: 8px;
+  }
+  input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    height: 40px;
+    padding: 0 12px;
+    font-size: 16px;
+    color: var(--ink);
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 9px;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  input[type="text"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  }
+  select {
+    width: 108px;
+    height: 40px;
+    padding: 0 8px;
+    font-size: 14px;
+    color: var(--ink);
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 9px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color .15s;
+  }
+  select:focus { border-color: var(--accent); }
+  .required {
+    color: #dc2626;
+    font-weight: 700;
+  }
+  .hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 5px;
+  }
+  .buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  button {
+    flex: 1;
+    height: 44px;
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: transform .05s, background .15s;
+  }
+  button:active { transform: translateY(1px); }
+  .btn-calc {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-calc:hover { background: var(--accent-dark); }
+  .btn-clear {
+    background: #eef2f7;
+    color: #374151;
+  }
+  .btn-clear:hover { background: #e2e8f0; }
+  .result {
+    margin-top: 18px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 24px;
+  }
+  .result .big {
+    font-size: 18px;
+    font-weight: 700;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .result.ok { background: var(--ok-bg); color: var(--ok); }
+  .result.error { background: var(--danger-bg); color: var(--danger); }
+  .result.info { background: var(--info-bg); color: var(--info); }
+  .result.hidden { display: none; }
+  .result .secondary { color: #475569; font-size: 13px; }
+
+  /* 移动端适配：手机 / 平板窄屏 */
+  @media (max-width: 420px) {
+    body { padding: 12px; }
+    .card { padding: 20px 16px 18px; border-radius: 14px; }
+    h1 { font-size: 20px; }
+    .subtitle { margin-bottom: 16px; }
+    select { width: 92px; font-size: 13px; padding: 0 4px; }
+    .buttons { gap: 8px; }
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>溶液配制计算器</h1>
+    <p class="subtitle">已知分子量 M0，并给出溶质质量 m、物质的量浓度 c、溶剂体积 V 中任意两项，自动计算第三项。</p>
+
+    <div class="formula">
+      <div>c = n / V ，n = m / M0 &nbsp;→&nbsp; <b>c = m / (M0 · V)</b></div>
+      <div style="color:#64748b;font-size:12px;">本场景忽略溶质体积：溶剂体积 ≈ 溶液体积。</div>
+    </div>
+
+    <div class="field">
+      <label for="M0">分子量 <span class="required">M0 *</span>（g/mol）</label>
+      <input type="text" id="M0" inputmode="decimal" placeholder="例如 58.44" autocomplete="off">
+      <div class="hint">必填项，单位为 g/mol。</div>
+    </div>
+
+    <div class="field">
+      <label for="m">溶质质量 m</label>
+      <div class="row">
+        <input type="text" id="m" inputmode="decimal" placeholder="留空则自动计算" autocomplete="off">
+        <select id="mUnit">
+          <option value="kg">kg（千克）</option>
+          <option value="g" selected>g（克）</option>
+          <option value="mg">mg（毫克）</option>
+          <option value="ng">ng（纳克）</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="c">物质的量浓度 c</label>
+      <div class="row">
+        <input type="text" id="c" inputmode="decimal" placeholder="留空则自动计算" autocomplete="off">
+        <select id="cUnit">
+          <option value="M" selected>M（mol/L）</option>
+          <option value="mM">mM</option>
+          <option value="uM">μM</option>
+          <option value="nM">nM</option>
+          <option value="pM">pM</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="v">溶剂体积 V</label>
+      <div class="row">
+        <input type="text" id="v" inputmode="decimal" placeholder="留空则自动计算" autocomplete="off">
+        <select id="vUnit">
+          <option value="L" selected>L（升）</option>
+          <option value="mL">mL（毫升）</option>
+          <option value="uL">μL（微升）</option>
+          <option value="nL">nL（纳升）</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="buttons">
+      <button class="btn-calc" id="calcBtn">开始计算</button>
+      <button class="btn-clear" id="clearBtn">清空</button>
+    </div>
+
+    <div class="result hidden" id="result"></div>
+  </div>
+
+<script>
+(function () {
+  "use strict";
+
+  // 单位换算系数（转换为基准单位：质量 g、体积 L、浓度 mol/L）
+  var MASS_UNITS = { kg: 1000, g: 1, mg: 1e-3, ng: 1e-9 };
+  var VOL_UNITS = { L: 1, mL: 1e-3, uL: 1e-6, nL: 1e-9 };
+  var CONC_UNITS = { M: 1, mM: 1e-3, uM: 1e-6, nM: 1e-9, pM: 1e-12 };
+
+  var FIELD_UNITS = { m: MASS_UNITS, c: CONC_UNITS, v: VOL_UNITS };
+  var FIELD_NAMES = { m: "溶质质量 m", c: "物质的量浓度 c", v: "溶剂体积 V" };
+  var UNIT_LABELS = {
+    kg: "kg", g: "g", mg: "mg", ng: "ng",
+    L: "L", mL: "mL", uL: "μL", nL: "nL",
+    M: "M", mM: "mM", uM: "μM", nM: "nM", pM: "pM"
+  };
+
+  // 记录每个字段当前单位，用于单位切换时的自动换算
+  var prevUnits = { m: "g", c: "M", v: "L" };
+
+  function el(id) { return document.getElementById(id); }
+
+  function getUnit(field) {
+    return el(field + "Unit").value;
+  }
+
+  function getNum(id) {
+    var s = el(id).value.trim();
+    if (s === "") return null;
+    var n = Number(s);
+    return isFinite(n) ? n : NaN;
+  }
+
+  function fmt(x) {
+    if (!isFinite(x)) return "";
+    if (x === 0) return "0";
+    var a = Math.abs(x);
+    if (a >= 1e12 || a < 1e-9) {
+      return x.toExponential(6).replace(/\.?0+e/, "e");
+    }
+    return String(parseFloat(x.toPrecision(10)));
+  }
+
+  function unitLabel(field) {
+    var u = getUnit(field);
+    return UNIT_LABELS[u] || u;
+  }
+
+  function show(type, big, secondary) {
+    var r = el("result");
+    r.className = "result " + type;
+    var html = "";
+    if (big) html += '<span class="big">' + big + "</span>";
+    if (secondary) html += '<span class="secondary">' + secondary + "</span>";
+    r.innerHTML = html;
+  }
+
+  function calculate() {
+    var M0 = getNum("M0");
+    if (M0 === null) {
+      show("error", "请输入分子量 M0", "M0 为必填项，单位为 g/mol。");
+      el("M0").focus();
+      return;
+    }
+    if (!isFinite(M0) || M0 <= 0) {
+      show("error", "分子量 M0 无效", "请输入大于 0 的数值。");
+      el("M0").focus();
+      return;
+    }
+
+    var fields = ["m", "c", "v"];
+    var provided = {};
+    var missing = [];
+
+    for (var i = 0; i < fields.length; i++) {
+      var f = fields[i];
+      var n = getNum(f);
+      if (n === null) {
+        missing.push(f);
+      } else if (!isFinite(n) || n <= 0) {
+        show("error", FIELD_NAMES[f] + " 无效", "请输入大于 0 的数值。");
+        el(f).focus();
+        return;
+      } else {
+        provided[f] = n;
+      }
+    }
+
+    if (missing.length === 0) {
+      show("info", "三项均已填写", "若要计算某一项，请将其留空后点击“开始计算”。");
+      return;
+    }
+    if (missing.length > 1) {
+      show("error", "请填写且仅填写两项", "在 m、c、V 中填写任意两项，另一项留空以自动计算。");
+      return;
+    }
+
+    var target = missing[0];
+    var base;
+
+    if (target === "c") {
+      var m_g1 = provided.m * MASS_UNITS[getUnit("m")];
+      var v_L1 = provided.v * VOL_UNITS[getUnit("v")];
+      base = m_g1 / (M0 * v_L1);          // mol/L
+    } else if (target === "m") {
+      var c_M1 = provided.c * CONC_UNITS[getUnit("c")];
+      var v_L2 = provided.v * VOL_UNITS[getUnit("v")];
+      base = c_M1 * M0 * v_L2;            // g
+    } else { // target === "v"
+      var m_g2 = provided.m * MASS_UNITS[getUnit("m")];
+      var c_M2 = provided.c * CONC_UNITS[getUnit("c")];
+      base = m_g2 / (c_M2 * M0);          // L
+    }
+
+    var targetValue = base / FIELD_UNITS[target][getUnit(target)];
+    el(target).value = fmt(targetValue);
+
+    // 汇总：物质的量 n = m / M0
+    var m_g;
+    if (target === "m") {
+      m_g = base;
+    } else {
+      m_g = provided.m * MASS_UNITS[getUnit("m")];
+    }
+    var nMol = m_g / M0;
+
+    show(
+      "ok",
+      FIELD_NAMES[target] + " = " + fmt(targetValue) + " " + unitLabel(target),
+      "换算关系：c = m / (M0 · V)；n = m / M0 = " + fmt(nMol) + " mol"
+    );
+  }
+
+  function onUnitChange(field) {
+    var sel = el(field + "Unit");
+    var old = prevUnits[field];
+    var nu = sel.value;
+    if (old === nu) return;
+
+    var inp = el(field);
+    var s = inp.value.trim();
+    if (s !== "") {
+      var n = Number(s);
+      if (isFinite(n)) {
+        var conv = FIELD_UNITS[field][old] / FIELD_UNITS[field][nu];
+        inp.value = fmt(n * conv);
+      }
+    }
+    prevUnits[field] = nu;
+  }
+
+  function clearAll() {
+    var ids = ["M0", "m", "c", "v"];
+    for (var i = 0; i < ids.length; i++) el(ids[i]).value = "";
+    el("mUnit").value = "g";
+    el("cUnit").value = "M";
+    el("vUnit").value = "L";
+    prevUnits.m = "g";
+    prevUnits.c = "M";
+    prevUnits.v = "L";
+    el("result").className = "result hidden";
+    el("result").innerHTML = "";
+    el("M0").focus();
+  }
+
+  el("calcBtn").addEventListener("click", calculate);
+  el("clearBtn").addEventListener("click", clearAll);
+  el("mUnit").addEventListener("change", function () { onUnitChange("m"); });
+  el("cUnit").addEventListener("change", function () { onUnitChange("c"); });
+  el("vUnit").addEventListener("change", function () { onUnitChange("v"); });
+
+  el("M0").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); calculate(); }
+  });
+  el("m").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); calculate(); }
+  });
+  el("c").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); calculate(); }
+  });
+  el("v").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); calculate(); }
+  });
+})();
+</script>
+</body>
+</html>

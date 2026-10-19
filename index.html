@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>溶液配制计算器 v2.0</title>
+<title>溶液配制计算器 v2.1</title>
 <style>
   :root {
     --bg:#f2f5f9; --card:#ffffff; --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb;
@@ -88,7 +88,7 @@
 <div class="card">
   <div class="header-row">
     <h1>溶液配制计算器</h1>
-    <span class="badge">v2.0</span>
+    <span class="badge">v2.1</span>
   </div>
   <p class="subtitle">三种溶质形态，留空任意一项即可自动计算；体积按加和近似处理。</p>
 
@@ -147,7 +147,7 @@
       <div>m = ρ<sub>l</sub> · V<sub>l</sub> · p &nbsp;；&nbsp; <b>c = m / (M<sub>0</sub> · V<sub>t</sub>)</b></div>
       <div><b>V<sub>s</sub> = V<sub>t</sub> − V<sub>l</sub></b></div>
     </div>
-    <div class="note-strong"><b>提醒：体积按加和近似计算</b>，即 V<sub>t</sub> = V<sub>l</sub> + V<sub>s</sub>，忽略混合体积收缩。</div>
+    <div class="note-strong"><b>提醒：体积按加和近似计算</b>，即 V<sub>t</sub> = V<sub>l</sub> + V<sub>s</sub>，忽略混合体积收缩。填写 V<sub>l</sub> / V<sub>t</sub> / V<sub>s</sub> 中任意一项即可求另外两项；全部填写则自动核验。</div>
     <div class="grid2">
       <div class="field">
         <label>分子量 M<sub>0</sub>（g/mol）</label>
@@ -168,17 +168,17 @@
         </div>
       </div>
       <div class="field">
-        <label>纯液体体积 V<sub>l</sub></label>
-        <div class="row">
-          <input type="text" id="lVl" inputmode="decimal" placeholder="留空则计算" autocomplete="off">
-          <select id="lVlUnit"><option>L</option><option selected>mL</option><option>μL</option><option>nL</option></select>
-        </div>
-      </div>
-      <div class="field">
         <label>总体积 V<sub>t</sub></label>
         <div class="row">
           <input type="text" id="lVt" inputmode="decimal" placeholder="留空则计算" autocomplete="off">
           <select id="lVtUnit"><option selected>L</option><option>mL</option><option>μL</option><option>nL</option></select>
+        </div>
+      </div>
+      <div class="field">
+        <label>纯液体体积 V<sub>l</sub></label>
+        <div class="row">
+          <input type="text" id="lVl" inputmode="decimal" placeholder="留空则计算" autocomplete="off">
+          <select id="lVlUnit"><option>L</option><option selected>mL</option><option>μL</option><option>nL</option></select>
         </div>
       </div>
       <div class="field">
@@ -206,7 +206,7 @@
       <button id="segVV" type="button">V-V 体积-体积</button>
     </div>
     <div class="formula" id="stockFormula"></div>
-    <div class="note-strong"><b>提醒：体积按加和近似计算</b>，即 V<sub>t</sub> = V<sub>0</sub> + V<sub>s</sub>，忽略混合体积收缩。</div>
+    <div class="note-strong"><b>提醒：体积按加和近似计算</b>，即 V<sub>t</sub> = V<sub>0</sub> + V<sub>s</sub>，忽略混合体积收缩。填写 V<sub>0</sub> / V<sub>t</sub> / V<sub>s</sub> 中任意一项即可求另外两项；全部填写则自动核验。</div>
 
     <div class="grid2">
       <div class="field span2">
@@ -221,17 +221,17 @@
         </div>
       </div>
       <div class="field">
-        <label>总体积 V<sub>t</sub></label>
-        <div class="row">
-          <input type="text" id="tVt" inputmode="decimal" placeholder="留空则计算" autocomplete="off">
-          <select id="tVtUnit"><option selected>L</option><option>mL</option><option>μL</option><option>nL</option></select>
-        </div>
-      </div>
-      <div class="field">
         <label>加入溶剂体积 V<sub>s</sub></label>
         <div class="row">
           <input type="text" id="tVs" inputmode="decimal" placeholder="留空则计算" autocomplete="off">
           <select id="tVsUnit"><option selected>L</option><option>mL</option><option>μL</option><option>nL</option></select>
+        </div>
+      </div>
+      <div class="field">
+        <label>总体积 V<sub>t</sub></label>
+        <div class="row">
+          <input type="text" id="tVt" inputmode="decimal" placeholder="留空则计算" autocomplete="off">
+          <select id="tVtUnit"><option selected>L</option><option>mL</option><option>μL</option><option>nL</option></select>
         </div>
       </div>
       <div class="field">
@@ -325,9 +325,10 @@
   var WVL = { "g/100mL":10, "g/L":1, "g/mL":1000 };       // -> g/L
 
   function $(id) { return document.getElementById(id); }
+  function normUnit(u) { return String(u).replace(/[\u03BC\u00B5]/g, "u"); }
   function readNum(id) { var s=$(id).value.trim(); if(s==="") return null; var n=Number(s); return isFinite(n)?n:NaN; }
-  function factor(id, unitId, map) { var n=readNum(id); return n===null?null:n*map[$(unitId).value]; }
-  function writeFactor(id, base, unitId, map) { $(id).value = fmt(base/map[$(unitId).value]); }
+  function factor(id, unitId, map) { var n=readNum(id); return n===null?null:n*map[normUnit($(unitId).value)]; }
+  function writeFactor(id, base, unitId, map) { $(id).value = fmt(base/map[normUnit($(unitId).value)]); }
   function readPct(id) { var n=readNum(id); return n===null?null:n/100; }
   function writePct(id, frac) { $(id).value = fmt(frac*100); }
 
@@ -447,133 +448,157 @@
 
   // ---- 页2 纯液体 ----
   function solveLiquid() {
-    var ids = ["lM0","lrho","lp","lVl","lVt","lVs","lc"];
-    var empties = ids.filter(function(id){ return readNum(id)===null; });
-    if (empties.length === 0) { info("参数均已填写", "若要计算某项，请留空其中一项。"); return; }
-    if (empties.length > 1) { err("请只留空一项", "留空且仅留空一项即可自动计算。"); return; }
-    for (var i=0;i<ids.length;i++) {
-      var n = readNum(ids[i]);
-      if (n !== null && !(n > 0)) { err("数值无效", "各参数需大于 0。", ids[i]); return; }
+    var M0=readNum("lM0"), rho=factor("lrho","lrhoUnit",DENS), pF=readPct("lp"),
+        Vl=factor("lVl","lVlUnit",VOL), Vt=factor("lVt","lVtUnit",VOL), Vs=factor("lVs","lVsUnit",VOL),
+        c=factor("lc","lcUnit",CONC);
+    var rows=[["lM0",M0],["lrho",rho],["lp",pF],["lVl",Vl],["lVt",Vt],["lVs",Vs],["lc",c]];
+    for (var i=0;i<rows.length;i++) { if (rows[i][1]!==null && !(rows[i][1]>0)) { err("数值无效","各参数需大于 0。",rows[i][0]); return; } }
+    if (readNum("lp")!==null && readNum("lp")>100) { err("纯度 p 超出范围","纯度应在 0–100%。","lp"); return; }
+
+    var nvEmpty=0;
+    if (M0===null) nvEmpty++; if (rho===null) nvEmpty++; if (pF===null) nvEmpty++; if (c===null) nvEmpty++;
+    var volKnown=0;
+    if (Vl!==null) volKnown++; if (Vt!==null) volKnown++; if (Vs!==null) volKnown++;
+
+    if (nvEmpty>=2) { err("请补充更多参数","非体积参数（M0、ρl、p、c）最多留空一项。"); return; }
+
+    var wasNull={ M0:M0===null, rho:rho===null, p:pF===null, Vl:Vl===null, Vt:Vt===null, Vs:Vs===null, c:c===null };
+
+    if (nvEmpty===1) {
+      if (volKnown<2) { err("参数不足","请再填写体积三项（Vl、Vt、Vs）中的至少两项。"); return; }
+      if (Vl===null) Vl=Vt-Vs; else if (Vt===null) Vt=Vl+Vs; else if (Vs===null) Vs=Vt-Vl;
+      if (M0===null) { M0=rho*Vl*pF/(c*Vt); $("lM0").value=fmt(M0); }
+      else if (rho===null) { rho=c*M0*Vt/(Vl*pF); writeFactor("lrho",rho,"lrhoUnit",DENS); }
+      else if (pF===null) { pF=c*M0*Vt/(rho*Vl); writePct("lp",pF); }
+      else { c=rho*Vl*pF/(M0*Vt); writeFactor("lc",c,"lcUnit",CONC); }
+    } else {
+      if (volKnown===0) { err("请填写体积项","请在 Vl、Vt、Vs 中至少填写一项。"); return; }
+      if (volKnown===1) {
+        if (Vl!==null) { Vt=rho*Vl*pF/(c*M0); Vs=Vt-Vl; }
+        else if (Vt!==null) { Vl=c*M0*Vt/(rho*pF); Vs=Vt-Vl; }
+        else { var den=rho*pF-c*M0; if (den<=0) { err("无法配制","母液浓度不足以稀释到目标浓度。"); return; } Vl=c*M0*Vs/den; Vt=Vl+Vs; }
+      } else if (volKnown===2) {
+        if (Vl===null) Vl=Vt-Vs; else if (Vt===null) Vt=Vl+Vs; else if (Vs===null) Vs=Vt-Vl;
+      }
     }
-    var lp = readNum("lp");
-    if (lp !== null && lp > 100) { err("纯度 p 超出范围", "纯度应在 0–100%。", "lp"); return; }
 
-    var M0 = readNum("lM0");
-    var rho = factor("lrho","lrhoUnit",DENS);
-    var pF = readPct("lp");
-    var Vl = factor("lVl","lVlUnit",VOL);
-    var Vt = factor("lVt","lVtUnit",VOL);
-    var Vs = factor("lVs","lVsUnit",VOL);
-    var c = factor("lc","lcUnit",CONC);
-    var target = empties[0];
+    if (Vl<0 || Vt<0 || Vs<0) { err("结果异常","计算出的体积为负：目标浓度可能高于母液浓度，无法稀释得到。"); return; }
+    if (wasNull.Vl) writeFactor("lVl",Vl,"lVlUnit",VOL);
+    if (wasNull.Vt) writeFactor("lVt",Vt,"lVtUnit",VOL);
+    if (wasNull.Vs) writeFactor("lVs",Vs,"lVsUnit",VOL);
 
-    if (target === "lM0") M0 = rho*Vl*pF/(c*Vt);
-    else if (target === "lrho") rho = c*M0*Vt/(Vl*pF);
-    else if (target === "lp") pF = c*M0*Vt/(rho*Vl);
-    else if (target === "lVl") Vl = Vt - Vs;
-    else if (target === "lVt") Vt = Vl + Vs;
-    else if (target === "lVs") Vs = Vt - Vl;
-    else if (target === "lc") c = rho*Vl*pF/(M0*Vt);
+    var warn=[];
+    if (!close(Vt, Vl+Vs)) warn.push("体积关系校验不一致：V<sub>t</sub> ≈ V<sub>l</sub> + V<sub>s</sub> 不成立");
+    var cCalc=rho*Vl*pF/(M0*Vt);
+    if (c!==null && !close(c, cCalc)) warn.push("浓度方程校验不一致：c ≈ ρ<sub>l</sub>·V<sub>l</sub>·p/(M<sub>0</sub>·V<sub>t</sub>) 不成立");
+    if (wasNull.p && (pF<=0 || pF>1)) warn.push("纯度 p 计算结果超出 0–100%");
 
-    if (target === "lM0") $("lM0").value = fmt(M0);
-    else if (target === "lrho") writeFactor("lrho", rho, "lrhoUnit", DENS);
-    else if (target === "lp") writePct("lp", pF);
-    else if (target === "lVl") writeFactor("lVl", Vl, "lVlUnit", VOL);
-    else if (target === "lVt") writeFactor("lVt", Vt, "lVtUnit", VOL);
-    else if (target === "lVs") writeFactor("lVs", Vs, "lVsUnit", VOL);
-    else if (target === "lc") writeFactor("lc", c, "lcUnit", CONC);
+    var parts=[];
+    if (wasNull.M0) parts.push(NAMES.lM0+" = "+fmt(M0)+" g/mol");
+    if (wasNull.rho) parts.push(NAMES.lrho+" = "+$("lrho").value+" "+$("lrhoUnit").value);
+    if (wasNull.p) parts.push(NAMES.lp+" = "+$("lp").value+" %");
+    if (wasNull.Vl) parts.push(NAMES.lVl+" = "+$("lVl").value+" "+$("lVlUnit").value);
+    if (wasNull.Vt) parts.push(NAMES.lVt+" = "+$("lVt").value+" "+$("lVtUnit").value);
+    if (wasNull.Vs) parts.push(NAMES.lVs+" = "+$("lVs").value+" "+$("lVsUnit").value);
+    if (wasNull.c) parts.push(NAMES.lc+" = "+$("lc").value+" "+$("lcUnit").value);
+    var big = parts.length ? parts.join("<br>") : "已核验全部参数";
 
-    var warn = [];
-    if (!close(Vt, Vl + Vs)) warn.push("体积关系校验不一致：V<sub>t</sub> ≈ V<sub>l</sub> + V<sub>s</sub> 不成立");
-    var cCalc = rho*Vl*pF/(M0*Vt);
-    if (!close(c, cCalc)) warn.push("浓度方程校验不一致：c ≈ ρ<sub>l</sub>·V<sub>l</sub>·p/(M<sub>0</sub>·V<sub>t</sub>) 不成立");
-
-    var mOut = rho*Vl*pF;
-    var nMol = mOut/M0;
-    var detail = "m = ρ<sub>l</sub>·V<sub>l</sub>·p = " + fmt(mOut) + " g<br>n = m / M<sub>0</sub> = " + fmt(nMol) + " mol";
-    setResult("ok", resultLine(target), warnBox(warn), detail);
+    var mOut=rho*Vl*pF, nMol=mOut/M0;
+    var detail="m = ρ<sub>l</sub>·V<sub>l</sub>·p = "+fmt(mOut)+" g<br>n = m / M<sub>0</sub> = "+fmt(nMol)+" mol";
+    setResult("ok", big, warnBox(warn), detail);
   }
 
   // ---- 页3 溶液 ----
   function solveStock() {
-    var ids = ["tM0","tV0","tVt","tVs","tc"];
-    if (curVariant === "ww") ids = ids.concat(["w","rho0"]);
-    else if (curVariant === "wv") ids = ids.concat(["wv"]);
-    else ids = ids.concat(["phi","rhol","pv"]);
+    var M0=readNum("tM0"), V0=factor("tV0","tV0Unit",VOL), Vt=factor("tVt","tVtUnit",VOL),
+        Vs=factor("tVs","tVsUnit",VOL), c=factor("tc","tcUnit",CONC);
 
-    var empties = ids.filter(function(id){ return readNum(id)===null; });
-    if (empties.length === 0) { info("参数均已填写", "若要计算某项，请留空其中一项。"); return; }
-    if (empties.length > 1) { err("请只留空一项", "留空且仅留空一项即可自动计算。"); return; }
-    for (var i=0;i<ids.length;i++) {
-      var n = readNum(ids[i]);
-      if (n !== null && !(n > 0)) { err("数值无效", "各参数需大于 0。", ids[i]); return; }
-    }
-    if (curVariant === "vv" && readNum("pv") !== null && readNum("pv") > 100) { err("纯度 p 超出范围", "纯度应在 0–100%。", "pv"); return; }
+    var w=null,rho0=null,wv=null,phi=null,rhol=null,pvF=null;
+    if (curVariant==="ww"){ w=factor("w","wUnit",FRAC); rho0=factor("rho0","rho0Unit",DENS); }
+    else if (curVariant==="wv"){ wv=factor("wv","wvUnit",WVL); }
+    else { phi=factor("phi","phiUnit",FRAC); rhol=factor("rhol","rholUnit",DENS); pvF=readPct("pv"); }
 
-    var M0 = readNum("tM0");
-    var V0 = factor("tV0","tV0Unit",VOL);
-    var Vt = factor("tVt","tVtUnit",VOL);
-    var Vs = factor("tVs","tVsUnit",VOL);
-    var c = factor("tc","tcUnit",CONC);
-    var target = empties[0];
+    var checks=[["tM0",M0],["tV0",V0],["tVt",Vt],["tVs",Vs],["tc",c]];
+    if (curVariant==="ww"){ checks.push(["w",w],["rho0",rho0]); }
+    else if (curVariant==="wv"){ checks.push(["wv",wv]); }
+    else { checks.push(["phi",phi],["rhol",rhol],["pv",pvF]); }
+    for (var i=0;i<checks.length;i++){ var n=checks[i][1]; if(n!==null && !(n>0)){ err("数值无效","各参数需大于 0。",checks[i][0]); return; } }
+    if (curVariant==="vv" && readNum("pv")!==null && readNum("pv")>100){ err("纯度 p 超出范围","纯度应在 0–100%。","pv"); return; }
 
-    if (curVariant === "ww") {
-      var w = factor("w","wUnit",FRAC);
-      var rho0 = factor("rho0","rho0Unit",DENS);
-      var ms = function(){ return w*rho0*V0; };
-      if (target === "tM0") M0 = ms()/(c*Vt);
-      else if (target === "tV0") V0 = Vt - Vs;
-      else if (target === "tVt") Vt = V0 + Vs;
-      else if (target === "tVs") Vs = Vt - V0;
-      else if (target === "tc") c = ms()/(M0*Vt);
-      else if (target === "w") w = c*M0*Vt/(rho0*V0);
-      else if (target === "rho0") rho0 = c*M0*Vt/(w*V0);
-      var mOut = w*rho0*V0;
-      if (target === "w") writeFactor("w", w, "wUnit", FRAC);
-      else if (target === "rho0") writeFactor("rho0", rho0, "rho0Unit", DENS);
-    } else if (curVariant === "wv") {
-      var wv = factor("wv","wvUnit",WVL);
-      var ms2 = function(){ return wv*V0; };
-      if (target === "tM0") M0 = ms2()/(c*Vt);
-      else if (target === "tV0") V0 = Vt - Vs;
-      else if (target === "tVt") Vt = V0 + Vs;
-      else if (target === "tVs") Vs = Vt - V0;
-      else if (target === "tc") c = ms2()/(M0*Vt);
-      else if (target === "wv") wv = c*M0*Vt/V0;
-      var mOut = wv*V0;
-      if (target === "wv") writeFactor("wv", wv, "wvUnit", WVL);
+    var nvEmpty=0;
+    if (curVariant==="ww"){ if(M0===null)nvEmpty++; if(w===null)nvEmpty++; if(rho0===null)nvEmpty++; if(c===null)nvEmpty++; }
+    else if (curVariant==="wv"){ if(M0===null)nvEmpty++; if(wv===null)nvEmpty++; if(c===null)nvEmpty++; }
+    else { if(M0===null)nvEmpty++; if(phi===null)nvEmpty++; if(rhol===null)nvEmpty++; if(pvF===null)nvEmpty++; if(c===null)nvEmpty++; }
+
+    var volKnown=0; if(V0!==null)volKnown++; if(Vt!==null)volKnown++; if(Vs!==null)volKnown++;
+    if (nvEmpty>=2){ err("请补充更多参数","非体积参数最多留空一项。"); return; }
+
+    var wasNull={ M0:M0===null, V0:V0===null, Vt:Vt===null, Vs:Vs===null, c:c===null,
+      w:w===null, rho0:rho0===null, wv:wv===null, phi:phi===null, rhol:rhol===null, pv:pvF===null };
+
+    if (nvEmpty===1) {
+      if (volKnown<2) { err("参数不足","请再填写体积三项（V0、Vt、Vs）中的至少两项。"); return; }
+      if (V0===null) V0=Vt-Vs; else if (Vt===null) Vt=V0+Vs; else if (Vs===null) Vs=Vt-V0;
+      if (curVariant==="ww") {
+        if (M0===null){ M0=w*rho0*V0/(c*Vt); $("tM0").value=fmt(M0); }
+        else if (w===null){ w=c*M0*Vt/(rho0*V0); writeFactor("w",w,"wUnit",FRAC); }
+        else if (rho0===null){ rho0=c*M0*Vt/(w*V0); writeFactor("rho0",rho0,"rho0Unit",DENS); }
+        else { c=w*rho0*V0/(M0*Vt); writeFactor("tc",c,"tcUnit",CONC); }
+      } else if (curVariant==="wv") {
+        if (M0===null){ M0=wv*V0/(c*Vt); $("tM0").value=fmt(M0); }
+        else if (wv===null){ wv=c*M0*Vt/V0; writeFactor("wv",wv,"wvUnit",WVL); }
+        else { c=wv*V0/(M0*Vt); writeFactor("tc",c,"tcUnit",CONC); }
+      } else {
+        if (M0===null){ M0=rhol*phi*V0*pvF/(c*Vt); $("tM0").value=fmt(M0); }
+        else if (phi===null){ phi=c*M0*Vt/(rhol*V0*pvF); writeFactor("phi",phi,"phiUnit",FRAC); }
+        else if (rhol===null){ rhol=c*M0*Vt/(phi*V0*pvF); writeFactor("rhol",rhol,"rholUnit",DENS); }
+        else if (pvF===null){ pvF=c*M0*Vt/(rhol*phi*V0); writePct("pv",pvF); }
+        else { c=rhol*phi*V0*pvF/(M0*Vt); writeFactor("tc",c,"tcUnit",CONC); }
+      }
     } else {
-      var phi = factor("phi","phiUnit",FRAC);
-      var rhol = factor("rhol","rholUnit",DENS);
-      var pvF = readPct("pv");
-      var ms3 = function(){ return rhol*phi*V0*pvF; };
-      if (target === "tM0") M0 = ms3()/(c*Vt);
-      else if (target === "tV0") V0 = Vt - Vs;
-      else if (target === "tVt") Vt = V0 + Vs;
-      else if (target === "tVs") Vs = Vt - V0;
-      else if (target === "tc") c = ms3()/(M0*Vt);
-      else if (target === "phi") phi = c*M0*Vt/(rhol*V0*pvF);
-      else if (target === "rhol") rhol = c*M0*Vt/(phi*V0*pvF);
-      else if (target === "pv") pvF = c*M0*Vt/(rhol*phi*V0);
-      var mOut = rhol*phi*V0*pvF;
-      if (target === "phi") writeFactor("phi", phi, "phiUnit", FRAC);
-      else if (target === "rhol") writeFactor("rhol", rhol, "rholUnit", DENS);
-      else if (target === "pv") writePct("pv", pvF);
+      if (volKnown===0){ err("请填写体积项","请在 V0、Vt、Vs 中至少填写一项。"); return; }
+      if (volKnown===1) {
+        var A1=(curVariant==="ww")?w*rho0:(curVariant==="wv")?wv:rhol*phi*pvF;
+        if (V0!==null){ Vt=A1*V0/(c*M0); Vs=Vt-V0; }
+        else if (Vt!==null){ V0=c*M0*Vt/A1; Vs=Vt-V0; }
+        else { var den=A1-c*M0; if(den<=0){ err("无法配制","母液浓度不足以稀释到目标浓度。"); return; } V0=c*M0*Vs/den; Vt=V0+Vs; }
+      } else if (volKnown===2) {
+        if (V0===null) V0=Vt-Vs; else if (Vt===null) Vt=V0+Vs; else if (Vs===null) Vs=Vt-V0;
+      }
     }
 
-    if (target === "tM0") $("tM0").value = fmt(M0);
-    else if (target === "tV0") writeFactor("tV0", V0, "tV0Unit", VOL);
-    else if (target === "tVt") writeFactor("tVt", Vt, "tVtUnit", VOL);
-    else if (target === "tVs") writeFactor("tVs", Vs, "tVsUnit", VOL);
-    else if (target === "tc") writeFactor("tc", c, "tcUnit", CONC);
+    if (V0<0 || Vt<0 || Vs<0) { err("结果异常","计算出的体积为负：目标浓度可能高于母液浓度，无法稀释得到。"); return; }
+    if (wasNull.V0) writeFactor("tV0",V0,"tV0Unit",VOL);
+    if (wasNull.Vt) writeFactor("tVt",Vt,"tVtUnit",VOL);
+    if (wasNull.Vs) writeFactor("tVs",Vs,"tVsUnit",VOL);
 
-    var mFinal = (curVariant === "ww") ? w*rho0*V0 : (curVariant === "wv") ? wv*V0 : rhol*phi*V0*pvF;
-    var warn = [];
-    if (!close(Vt, V0 + Vs)) warn.push("体积关系校验不一致：V<sub>t</sub> ≈ V<sub>0</sub> + V<sub>s</sub> 不成立");
-    if (!close(c, mFinal/(M0*Vt))) warn.push("浓度方程校验不一致，请检查输入参数");
-    var nMol = mFinal/M0;
-    var detail = "m<sub>溶质</sub> = " + fmt(mFinal) + " g<br>n = m<sub>溶质</sub> / M<sub>0</sub> = " + fmt(nMol) + " mol";
-    setResult("ok", resultLine(target), warnBox(warn), detail);
+    var A=(curVariant==="ww")?w*rho0:(curVariant==="wv")?wv:rhol*phi*pvF;
+    var warn=[];
+    if (!close(Vt, V0+Vs)) warn.push("体积关系校验不一致：V<sub>t</sub> ≈ V<sub>0</sub> + V<sub>s</sub> 不成立");
+    if (c!==null && !close(c, A*V0/(M0*Vt))) warn.push("浓度方程校验不一致，请检查输入参数");
+    if (curVariant==="vv" && wasNull.pv && (pvF<=0 || pvF>1)) warn.push("纯度 p 计算结果超出 0–100%");
+
+    var parts=[];
+    if (wasNull.M0) parts.push(NAMES.tM0+" = "+fmt(M0)+" g/mol");
+    if (wasNull.V0) parts.push(NAMES.tV0+" = "+$("tV0").value+" "+$("tV0Unit").value);
+    if (wasNull.Vt) parts.push(NAMES.tVt+" = "+$("tVt").value+" "+$("tVtUnit").value);
+    if (wasNull.Vs) parts.push(NAMES.tVs+" = "+$("tVs").value+" "+$("tVsUnit").value);
+    if (wasNull.c) parts.push(NAMES.tc+" = "+$("tc").value+" "+$("tcUnit").value);
+    if (curVariant==="ww") {
+      if (wasNull.w) parts.push(NAMES.w+" = "+$("w").value+" "+($("wUnit").value==="小数"?"小数":"%"));
+      if (wasNull.rho0) parts.push(NAMES.rho0+" = "+$("rho0").value+" "+$("rho0Unit").value);
+    } else if (curVariant==="wv") {
+      if (wasNull.wv) parts.push(NAMES.wv+" = "+$("wv").value+" "+$("wvUnit").value);
+    } else {
+      if (wasNull.phi) parts.push(NAMES.phi+" = "+$("phi").value+" "+($("phiUnit").value==="小数"?"小数":"%"));
+      if (wasNull.rhol) parts.push(NAMES.rhol+" = "+$("rhol").value+" "+$("rholUnit").value);
+      if (wasNull.pv) parts.push(NAMES.pv+" = "+$("pv").value+" %");
+    }
+    var big = parts.length ? parts.join("<br>") : "已核验全部参数";
+
+    var mFinal=A*V0, nMol=mFinal/M0;
+    var detail="m<sub>溶质</sub> = "+fmt(mFinal)+" g<br>n = m<sub>溶质</sub> / M<sub>0</sub> = "+fmt(nMol)+" mol";
+    setResult("ok", big, warnBox(warn), detail);
   }
 
   function calc() {
@@ -625,7 +650,7 @@
       var old = prevUnits[selId], nu = sel.value;
       var inp = $(targetId), s = inp.value.trim();
       if (s !== "" && isFinite(Number(s))) {
-        inp.value = fmt(Number(s) * map[old] / map[nu]);
+        inp.value = fmt(Number(s) * map[normUnit(old)] / map[normUnit(nu)]);
       }
       prevUnits[selId] = nu;
     });
